@@ -1,5 +1,9 @@
 # GitHub 检查与 npm 发布
 
+## 0.7.1 组织首次发行（2026-10-11）
+
+`v0.7.1` 固定 `19455496011284608f7742c45ae7a6361ec3d323`，[真实 OIDC 发布](https://github.com/semicoder-dev/agent-webtool/actions/runs/38116631403) 成功。公开 tarball 与 Actions 归档逐字节一致，SHA-256 `b23caa32610e41ba767740df348c577b88004d1d82413135a51401c9f5f2d8c0`，npm provenance 指向组织仓库。新缓存独立 registry 安装后的 ESM/CJS、TypeScript、两个 CLI 入口及 MCP 初始化/工具筛选/错误返回通过。包名与公共契约不变；官网版本入口随本次跨项目迁移统一部署。
+
 包：`agent-webtool`；仓库：`semicoder-dev/agent-webtool`。本流程参考 FIA 和麻辣烫的“先验收归档、后发布同一归档”，以及 Semicoder 的独立质量检查。agent-webtool 是 npm 工具包，不部署网站服务；官网由独立 Semicoder 仓库发布。
 
 ## 工作流

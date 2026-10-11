@@ -1,7 +1,7 @@
 # agent-webtool
 
 [![npm version](https://img.shields.io/npm/v/agent-webtool.svg)](https://www.npmjs.com/package/agent-webtool)
-[![GitHub](https://img.shields.io/badge/GitHub-potato47%2Fagent--webtool-181717?logo=github)](https://github.com/semicoder-dev/agent-webtool)
+[![GitHub](https://img.shields.io/badge/GitHub-semicoder--dev%2Fagent--webtool-181717?logo=github)](https://github.com/semicoder-dev/agent-webtool)
 [![license](https://img.shields.io/npm/l/agent-webtool.svg)](./LICENSE)
 
 Web fetch and multi-engine search tools for AI agents. Use it as a JavaScript/TypeScript
@@ -438,7 +438,7 @@ release evidence. Versions before 0.7.0 do not include the source-context additi
 
 ## Contributing
 
-Issues and pull requests welcome at <https://github.com/potato47/agent-webtool>.
+Issues and pull requests welcome at <https://github.com/semicoder-dev/agent-webtool>.
 
 When opening a bug report, please include:
 - the command you ran (or MCP `tools/call` request),

@@ -1,6 +1,6 @@
 # GitHub 检查与 npm 发布
 
-包：`agent-webtool`；仓库：`potato47/agent-webtool`。本流程参考 FIA 和麻辣烫的“先验收归档、后发布同一归档”，以及 Semicoder 的独立质量检查。agent-webtool 是 npm 工具包，不部署网站服务；官网由独立 Semicoder 仓库发布。
+包：`agent-webtool`；仓库：`semicoder-dev/agent-webtool`。本流程参考 FIA 和麻辣烫的“先验收归档、后发布同一归档”，以及 Semicoder 的独立质量检查。agent-webtool 是 npm 工具包，不部署网站服务；官网由独立 Semicoder 仓库发布。
 
 ## 工作流
 
@@ -12,11 +12,15 @@
 
 CI 使用 Bun 1.4.2，覆盖 Linux Node 20.18.1 / 24 和 macOS Node 24；发布 job 使用 GitHub 托管 Linux runner、Node 24、npm 11.19.0。Action 使用提交 SHA 固定。正式版本发布到 `latest`，预发布到 `next`；暂不接受 SemVer build metadata。PR 没有 npm 发布权限，只有发布 job 获得 `id-token: write`。
 
+## 组织迁移配置
+
+旧 Trusted Publisher 身份字段不可修改；在最终归档就绪后删除旧连接，并创建组织连接，明确允许 `npm publish`。新连接必须在两天内首次成功发布。环境继续使用精确版本标签许可，不添加长期 npm token。
+
 ## 首次配置
 
 1. 经审阅将工作流推送到仓库默认分支；手动入口需要它已存在于默认分支。
 2. 在 GitHub Settings → Environments 创建 `npm` 环境；按维护者的保护策略允许本次版本标签，保留已有审核要求。
-3. 在 npm 的 `agent-webtool` Settings → Trusted Publisher 配置：用户 `potato47`，仓库 `agent-webtool`，工作流文件名 `publish-npm.yml`，环境 `npm`，允许直接 `npm publish`。
+3. 在 npm 的 `agent-webtool` Settings → Trusted Publisher 配置：组织 `semicoder-dev`，仓库 `agent-webtool`，工作流文件名 `publish-npm.yml`，环境 `npm`，允许直接 `npm publish`。
 4. 手动运行 **Publish agent-webtool**，先验证 GitHub runner 上的构建和归档消费；实际 OIDC 发布权限仍需下一次获授权的新版本发布验证。
 
 不需要 `NPM_TOKEN` 或 `NODE_AUTH_TOKEN` secret。npm 官方要求支持 OIDC 的 npm / Node 版本与 GitHub 托管 runner，参见 [Trusted publishing](https://docs.npmjs.com/trusted-publishers/)。包的 `repository.url`、workflow 仓库限制和 npm 发布者配置必须对应同一仓库；迁移时一起更新。

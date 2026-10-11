@@ -1,6 +1,6 @@
 {
   "name": "agent-webtool",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Web fetch and multi-engine search tools for AI agents (SDK + CLI + MCP server). No API keys required.",
   "keywords": [
     "agent",
@@ -17,14 +17,14 @@
     "web-search",
     "wechat"
   ],
-  "homepage": "https://github.com/potato47/agent-webtool#readme",
+  "homepage": "https://github.com/semicoder-dev/agent-webtool#readme",
   "bugs": {
-    "url": "https://github.com/potato47/agent-webtool/issues"
+    "url": "https://github.com/semicoder-dev/agent-webtool/issues"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/potato47/agent-webtool.git"
+    "url": "git+https://github.com/semicoder-dev/agent-webtool.git"
   },
   "bin": {
     "agent-webtool": "./dist/cli.mjs",

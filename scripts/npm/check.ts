@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
 export const root = fileURLToPath(new URL("../../", import.meta.url));
-export const repository = "potato47/agent-webtool";
+export const repository = "semicoder-dev/agent-webtool";
 export const registry = "https://registry.npmjs.org";
 
 export function assert(condition: unknown, message: string): asserts condition {

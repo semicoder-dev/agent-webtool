@@ -1,7 +1,7 @@
 # agent-webtool
 
 [![npm version](https://img.shields.io/npm/v/agent-webtool.svg)](https://www.npmjs.com/package/agent-webtool)
-[![GitHub](https://img.shields.io/badge/GitHub-potato47%2Fagent--webtool-181717?logo=github)](https://github.com/potato47/agent-webtool)
+[![GitHub](https://img.shields.io/badge/GitHub-potato47%2Fagent--webtool-181717?logo=github)](https://github.com/semicoder-dev/agent-webtool)
 [![license](https://img.shields.io/npm/l/agent-webtool.svg)](./LICENSE)
 
 Web fetch and multi-engine search tools for AI agents. Use it as a JavaScript/TypeScript
@@ -400,7 +400,7 @@ Search and fetch dependency options both accept an `AbortSignal`. TypeScript typ
 ## Development
 
 ```bash
-git clone https://github.com/potato47/agent-webtool.git
+git clone https://github.com/semicoder-dev/agent-webtool.git
 cd agent-webtool
 bun install
 bun run check       # lint, format, source types, and package metadata

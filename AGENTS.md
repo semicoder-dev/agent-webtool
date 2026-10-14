@@ -5,7 +5,7 @@
 - 本项目由用户维护，提供网页抓取和多引擎搜索的 SDK、CLI 与 MCP server；不是只读参考仓库。先读 `README.md`、`docs/npm-release.md`、`package.json`、相关源码并检查 Git 状态，保留已有未提交改动和未跟踪文件。
 - SDK 入口在 `src/index.ts`，核心在 `src/core/`，CLI/MCP 在 `bin/`；输入 schema 在 `src/schemas.ts`，结果类型在 `src/core/types.ts`。公共行为变化同时核对三个入口及 README，不只修改某个包装层。
 - `dist/` 为构建产物，不手工编辑。SDK 面向 Node/Bun 服务端；不要把 DNS/HTTP 依赖引入浏览器包。
-- 网页抓取/搜索的通用能力归本仓库，调用方的模型、agent loop、会话持久化及 UI 归应用仓库。同属 workspace 不代表已经接入 FIA 或麻辣烫。
+- 网页抓取/搜索的通用能力归本仓库，调用方的模型、agent loop、会话持久化及 UI 归应用仓库。同属 workspace 不代表已经接入 FIA 或 fn。
 
 ## 实现与验证
 

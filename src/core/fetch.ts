@@ -6,7 +6,7 @@ import { LRUCache } from "./cache.ts";
 import { decodeBody, decodeSogouLink } from "./decode.ts";
 import { fetchWithGuards, WebtoolError } from "./http.ts";
 import { type SourceContext, registerFetchedPage } from "./search.ts";
-import type { FetchFormat, FetchInput } from "./types.ts";
+import type { FetchFormat, FetchInput, FetchResponse } from "./types.ts";
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 256;
@@ -40,7 +40,7 @@ const CONTENT_CANDIDATES = [
   ".rich_media_content",
 ];
 
-const cache = new LRUCache<{ text: string; title?: string }>({
+const cache = new LRUCache<FetchResponse>({
   maxEntries: CACHE_MAX_ENTRIES,
   maxBytes: CACHE_MAX_BYTES,
   ttlMs: CACHE_TTL_MS,
@@ -121,78 +121,86 @@ export interface FetchDeps {
   sources?: SourceContext;
 }
 
-/** Fetch a URL and return its content as a plain string (markdown by default). */
+/** Legacy text API, including the existing human-readable redirect message. */
 export async function webFetch(raw: FetchInput, deps: FetchDeps = {}): Promise<string> {
+  return (await webFetchResult(raw, deps)).text;
+}
+
+/** Fetch a page with metadata; each returned object is independent of the cache. */
+export async function webFetchResult(
+  raw: FetchInput,
+  deps: FetchDeps = {},
+): Promise<FetchResponse> {
   deps.signal?.throwIfAborted();
   const format: FetchFormat = raw.format ?? "markdown";
   const maxBytes = raw.maxBytes ?? 100_000;
   const timeoutMs = raw.timeoutMs ?? 30_000;
   const cacheKey = `${raw.url}::${format}::${maxBytes}`;
-
   const cached = cache.get(cacheKey);
   if (cached !== undefined) {
-    if (cached.title !== undefined) registerFetchedPage(raw.url, cached.title, deps.sources);
-    return cached.text;
+    if (!cached.redirect) registerFetchedPage(raw.url, cached.title, deps.sources);
+    return structuredClone(cached);
   }
 
   const fetcher = deps.fetch ?? fetchWithGuards;
-  const result = await fetcher(raw.url, {
-    timeoutMs,
-    redirect: "same-origin",
-    signal: deps.signal,
-  });
-
-  if (result.redirect) {
-    const msg =
-      `[Redirected to a different host: ${result.redirect.to}]\n` +
-      `[Call web_fetch again with the redirect URL to follow.]`;
-    cache.set(cacheKey, { text: msg }, new TextEncoder().encode(msg).byteLength);
-    return msg;
-  }
-
-  if (looksBinary(result.contentType) && format !== "html") {
-    throw new WebtoolError(
-      "binary_content",
-      `Binary content (${result.contentType}, ${result.body.byteLength}B) cannot be converted to ${format}. ` +
-        `Use format="html" to fetch raw bytes if you need them.`,
-    );
-  }
-
-  const isHtml = result.contentType.includes("text/html");
-  let html = decodeBody(result);
-  // Sogou /link is a JS-redirect stub, not an HTTP 3xx — resolve it to the real article.
-  const real = decodeSogouLink(raw.url, html);
-  if (real && real !== raw.url) {
-    const resolved = await fetcher(real, {
-      timeoutMs,
-      redirect: "same-origin",
-      signal: deps.signal,
-    });
-    if (!resolved.redirect && !looksBinary(resolved.contentType)) {
-      html = decodeBody(resolved);
+  let result = await fetcher(raw.url, { timeoutMs, redirect: "same-origin", signal: deps.signal });
+  deps.signal?.throwIfAborted();
+  // Sogou /link is a supported JS redirect stub, not a rendered browser page.
+  if (!result.redirect) {
+    const html = decodeBody(result);
+    const real = decodeSogouLink(result.finalUrl, html) ?? decodeSogouLink(raw.url, html);
+    if (real && real !== result.finalUrl) {
+      result = await fetcher(real, { timeoutMs, redirect: "same-origin", signal: deps.signal });
+      deps.signal?.throwIfAborted();
     }
   }
 
-  let out: string;
-  if (format === "html" || !isHtml) {
-    out = html;
+  let response: FetchResponse;
+  if (result.redirect) {
+    response = {
+      url: raw.url,
+      finalUrl: result.finalUrl,
+      status: result.status,
+      contentType: result.contentType,
+      title: "",
+      format,
+      truncated: false,
+      text:
+        `[Redirected to a different host: ${result.redirect.to}]\n` +
+        `[Call web_fetch again with the redirect URL to follow.]`,
+      redirect: { ...result.redirect },
+    };
   } else {
-    const { $, host } = prepareDocument(html);
-    out = format === "text" ? htmlToText($, host) : htmlToMarkdown(host);
+    if (looksBinary(result.contentType) && format !== "html") {
+      throw new WebtoolError(
+        "binary_content",
+        `Binary content (${result.contentType}, ${result.body.byteLength}B) cannot be converted to ${format}. ` +
+          `Use format="html" to fetch raw bytes if you need them.`,
+      );
+    }
+    const isHtml = result.contentType.toLowerCase().includes("text/html");
+    const html = decodeBody(result);
+    let text: string;
+    if (format === "html" || !isHtml) text = html;
+    else {
+      const { $, host } = prepareDocument(html);
+      text = format === "text" ? htmlToText($, host) : htmlToMarkdown(host);
+    }
+    response = {
+      url: raw.url,
+      finalUrl: result.finalUrl,
+      status: result.status,
+      contentType: result.contentType,
+      title: isHtml ? extractTitle(cheerio.load(html)) : "",
+      format,
+      truncated: new TextEncoder().encode(text).byteLength > maxBytes,
+      text: truncate(text, maxBytes),
+    };
   }
-
-  const title = isHtml ? extractTitle(cheerio.load(html)) : "";
   deps.signal?.throwIfAborted();
-  registerFetchedPage(raw.url, title, deps.sources);
-
-  out = truncate(out, maxBytes);
-  const encoder = new TextEncoder();
-  cache.set(
-    cacheKey,
-    { text: out, title },
-    encoder.encode(out).byteLength + encoder.encode(title).byteLength,
-  );
-  return out;
+  if (!response.redirect) registerFetchedPage(raw.url, response.title, deps.sources);
+  cache.set(cacheKey, response, new TextEncoder().encode(JSON.stringify(response)).byteLength);
+  return structuredClone(response);
 }
 
 export function clearFetchCache(): void {

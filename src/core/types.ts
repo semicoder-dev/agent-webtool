@@ -10,6 +10,19 @@ export interface FetchInput {
   timeoutMs?: number;
 }
 
+/** Structured page response. HTTP error pages are responses, not transport failures. */
+export interface FetchResponse {
+  url: string;
+  finalUrl: string;
+  status: number;
+  contentType: string;
+  title: string;
+  format: FetchFormat;
+  text: string;
+  truncated: boolean;
+  redirect?: { from: string; to: string; status: number };
+}
+
 export type TimeRange = "day" | "week" | "month" | "year";
 
 export interface SearchInput {

@@ -488,3 +488,19 @@ When opening a bug report, please include:
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+
+## Structured fetch (0.8.1+)
+
+Version 0.8.1 adds `webFetchResult(input, { signal, sources })`, returning
+`FetchResponse`: `url`, `finalUrl`, `status`, `contentType`, `title`, `format`,
+`text`, `truncated`, and optional `redirect` (`from`, `to`, `status`). HTTP error
+pages retain their status and body; a cross-host redirect is reported, not followed
+automatically. Network failures, cancellation and size limits reject the promise.
+`webFetch()` still returns the same text string; CLI and MCP output shapes are unchanged.
+Cached responses preserve metadata and return independent objects. Source contexts
+remain caller-owned; create one per call when citation numbers must not be shared.
+
+The 10 MiB HTTP body limit is enforced while streaming, including responses without
+Content-Length. Request timeout and cancellation cover DNS waits, redirects and body
+reads. Use 0.8.1 or newer for the structured fetch API; 0.8.0 and earlier retain
+the original text-only fetch API.

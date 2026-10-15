@@ -110,6 +110,7 @@ export function normalizeAndValidateUrl(input: string): URL {
 // Resolve host to IPs and reject if any is private (unless ALLOW_PRIVATE).
 export async function ensurePublicHost(host: string): Promise<void> {
   if (ALLOW_PRIVATE) return;
+  host = host.replace(/^\[|\]$/g, "");
   if (isPrivateAddress(host)) {
     throw new WebtoolError("private_address", `Host ${host} is a private/reserved address`);
   }
@@ -160,12 +161,73 @@ export interface RawFetchResult {
   redirect?: { from: string; to: string; status: number }; // set when redirect not followed
 }
 
+/** Stop waiting even when a DNS implementation cannot cancel its underlying lookup. */
+async function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const cleanup = () => signal.removeEventListener("abort", abort);
+    const abort = () => {
+      cleanup();
+      reject(signal.reason);
+    };
+    signal.addEventListener("abort", abort, { once: true });
+    work.then(
+      (value) => {
+        cleanup();
+        resolve(value);
+      },
+      (error) => {
+        cleanup();
+        reject(error);
+      },
+    );
+    if (signal.aborted) abort();
+  });
+}
+
+async function readBody(res: Response, signal: AbortSignal): Promise<ArrayBuffer> {
+  const reader = res.body?.getReader();
+  if (!reader) return new ArrayBuffer(0);
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  let finished = false;
+  try {
+    while (true) {
+      signal.throwIfAborted();
+      const { done, value } = await abortable(reader.read(), signal);
+      if (done) {
+        finished = true;
+        break;
+      }
+      length += value.byteLength;
+      if (length > MAX_HTTP_CONTENT_LENGTH)
+        throw new WebtoolError("too_large", `Body exceeds limit ${MAX_HTTP_CONTENT_LENGTH}B`);
+      chunks.push(value);
+    }
+    const body = new Uint8Array(length);
+    let offset = 0;
+    for (const chunk of chunks) {
+      body.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return body.buffer;
+  } finally {
+    if (!finished) void reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
+
+// Internal test seams; not exported from the package entry point.
+interface GuardDeps {
+  resolveHost?: typeof ensurePublicHost;
+  fetch?: typeof fetchWithProxyFallback;
+}
+
 export async function fetchWithGuards(
   rawUrl: string,
   opts: FetchOptions = {},
+  deps: GuardDeps = {},
 ): Promise<RawFetchResult> {
   const url = normalizeAndValidateUrl(rawUrl);
-  await ensurePublicHost(url.hostname);
 
   const timeoutMs = opts.timeoutMs ?? 30_000;
   const policy = opts.redirect ?? "same-origin";
@@ -193,7 +255,10 @@ export async function fetchWithGuards(
   let hops = 0;
   try {
     while (true) {
-      const res = await fetchWithProxyFallback(currentUrl, {
+      ctrl.signal.throwIfAborted();
+      await abortable((deps.resolveHost ?? ensurePublicHost)(currentUrl.hostname), ctrl.signal);
+      ctrl.signal.throwIfAborted();
+      const res = await (deps.fetch ?? fetchWithProxyFallback)(currentUrl, {
         method: "GET",
         headers,
         redirect: "manual",
@@ -201,6 +266,7 @@ export async function fetchWithGuards(
       });
 
       if ([301, 302, 303, 307, 308].includes(res.status)) {
+        void res.body?.cancel().catch(() => {});
         const location = res.headers.get("location");
         if (!location) throw new WebtoolError("bad_redirect", "Redirect with no Location header");
         const next = new URL(location, currentUrl);
@@ -227,25 +293,19 @@ export async function fetchWithGuards(
         }
         // Re-validate the next URL (re-runs SSRF guard).
         currentUrl = normalizeAndValidateUrl(next.toString());
-        await ensurePublicHost(currentUrl.hostname);
         continue;
       }
 
       const lenHeader = res.headers.get("content-length");
       if (lenHeader && Number(lenHeader) > MAX_HTTP_CONTENT_LENGTH) {
+        void res.body?.cancel().catch(() => {});
         throw new WebtoolError(
           "too_large",
           `Content-Length ${lenHeader} exceeds limit ${MAX_HTTP_CONTENT_LENGTH}`,
         );
       }
 
-      const body = await res.arrayBuffer();
-      if (body.byteLength > MAX_HTTP_CONTENT_LENGTH) {
-        throw new WebtoolError(
-          "too_large",
-          `Body ${body.byteLength}B exceeds limit ${MAX_HTTP_CONTENT_LENGTH}B`,
-        );
-      }
+      const body = await readBody(res, ctrl.signal);
 
       return {
         finalUrl: currentUrl.toString(),
@@ -254,6 +314,9 @@ export async function fetchWithGuards(
         body,
       };
     }
+  } catch (error) {
+    if (ctrl.signal.aborted) throw ctrl.signal.reason;
+    throw error;
   } finally {
     clearTimeout(timeoutId);
     if (opts.signal) opts.signal.removeEventListener("abort", onAbort);

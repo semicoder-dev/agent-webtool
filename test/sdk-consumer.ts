@@ -5,6 +5,8 @@ import {
   clearCollectedSources,
   collectedSources,
   webFetch,
+  webFetchResult,
+  type FetchResponse,
   webSearch,
   type FetchDeps,
   type FetchInput,
@@ -38,3 +40,6 @@ clearCollectedSources();
 void fetched;
 void searched;
 void sources;
+
+const structured: Promise<FetchResponse> = webFetchResult(fetchInput, fetchDeps);
+void structured;

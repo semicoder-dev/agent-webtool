@@ -1,8 +1,9 @@
-export { webFetch, clearFetchCache } from "./core/fetch.ts";
+export { webFetch, webFetchResult, clearFetchCache } from "./core/fetch.ts";
 export { webSearch, normalizeUrl, collectedSources, clearCollectedSources } from "./core/search.ts";
 export { WebtoolError } from "./core/http.ts";
 export type {
   FetchInput,
+  FetchResponse,
   SearchInput,
   EngineName,
   FetchFormat,

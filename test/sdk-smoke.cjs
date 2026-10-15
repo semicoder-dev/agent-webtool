@@ -11,12 +11,14 @@ const {
   normalizeUrl,
   searchInputSchema,
   webFetch,
+  webFetchResult,
   webSearch,
 } = require("agent-webtool");
 
 assert(createSourceContext() instanceof SourceContext);
 assert.deepEqual(createSourceContext().snapshot(), []);
 assert.equal(typeof webFetch, "function");
+assert.equal(typeof webFetchResult, "function");
 assert.equal(typeof webSearch, "function");
 assert.equal(typeof clearCollectedSources, "function");
 assert.equal(typeof collectedSources, "function");

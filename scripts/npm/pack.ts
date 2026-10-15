@@ -76,7 +76,13 @@ try {
     validatePackage(installed).version === release.version,
     "Installed version differs from archive",
   );
-  for (const name of ["sdk-smoke.mjs", "sdk-smoke.cjs", "sdk-consumer.ts", "package-smoke.mjs"]) {
+  for (const name of [
+    "sdk-smoke.mjs",
+    "sdk-smoke.cjs",
+    "sdk-consumer.ts",
+    "package-smoke.mjs",
+    "mcp-peer.mjs",
+  ]) {
     await cp(join(root, "test", name), join(temporary, name));
   }
   await run(["node", "sdk-smoke.mjs"], temporary);

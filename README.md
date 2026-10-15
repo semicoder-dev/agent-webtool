@@ -223,11 +223,47 @@ Edit `~/.cursor/mcp.json` (user) or `.cursor/mcp.json` (project):
 
 Spawn `npx -y agent-webtool mcp` and speak the MCP protocol over stdio. The server advertises two tools (`web_fetch`, `web_search`) and their JSON Schemas via `tools/list`.
 
+### SDK v2 / protocol update (since 0.8.0)
+
+agent-webtool 0.8.0 uses MCP TypeScript SDK **2.3.1** and `serveStdio` to support
+**2026-07-28**, including `server/discover`, alongside the legacy `initialize`
+protocols **2025-11-25**, **2025-06-18**, **2025-03-26**, **2024-11-05**, and
+**2024-10-07**. The command and client configuration stay the same. Upgrade to
+**agent-webtool 0.8.0 or newer** to use these additions; 0.7.1 does not include them.
+
+Both tools keep their original single text content block and add an `outputSchema`
+and matching `structuredContent`:
+
+| Tool | Structured content |
+| ---- | ------------------ |
+| `web_fetch` | `{ text: string }` — the same page content or redirect notice as the text block |
+| `web_search` | `{ text, results, engines }` — the same fields as SDK `SearchResponse`, including citation IDs, scores and engine status |
+
+Tools advertise read-only, idempotent access to the external web. Inputs use the
+complete strict schema: unknown fields are now rejected instead of discarded.
+Input validation and execution failures return `isError: true` with text and no
+successful structured payload; unknown or filtered-out tools return JSON-RPC
+`-32602`. Partial search failures and empty searches retain their normal results
+and per-engine statuses.
+
+Cancellation reaches the underlying fetch/search requests. Closing stdin or
+sending SIGINT/SIGTERM closes the connection and aborts in-flight work. Citation
+IDs are stable within each connection and isolated between server instances;
+MCP does not expose source snapshots or persist them. SDK calls and the regular
+CLI keep their existing source-context behavior. Stdout carries only MCP messages.
+
+The update provides stdio only. See the official
+[SDK migration guide](https://ts.sdk.modelcontextprotocol.io/v2/migration/support-2026-07-28)
+and [tool protocol](https://modelcontextprotocol.io/specification/2026-07-28/server/tools).
+
 ---
 
 ## Output format
 
-The CLI and MCP tools return **plain text** — no JSON wrapping, no metadata envelope. Pipe it straight into a file or another command. SDK callers receive the same text together with structured results and engine status from `webSearch()`.
+The CLI prints **plain text** that can be piped into a file or another command.
+MCP carries that text inside its protocol result; 0.8.0 and newer also include
+the structured content described above. SDK callers receive the same text together
+with structured results and engine status from `webSearch()`.
 
 ### `web_fetch`
 
@@ -254,7 +290,7 @@ If the content exceeds `--max-bytes`, the output ends with a `[truncated]` marke
 
 ### `web_search`
 
-Returns a citation list, one entry per result (number, title, URL, snippet). By default, citation numbers are stable across calls within the same process — the same URL keeps its `[n]`. The unreleased SDK source also supports explicit per-session contexts (see below):
+Returns a citation list, one entry per result (number, title, URL, snippet). By default, SDK/CLI citation numbers are stable across calls within the same process — the same URL keeps its `[n]`. SDK 0.7.0 and newer also support explicit per-session contexts (see below); MCP 0.8.0 and newer use one context per connection:
 
 ```text
 [1] Bun — A fast all-in-one JavaScript runtime
@@ -375,7 +411,9 @@ of new IDs follows completion order, so it is not deterministic across concurren
 Call `sources.clear()` only after its in-flight calls have settled, or use a new context for a
 new session. Clearing resets IDs and does not cancel pending work.
 
-Omitting `sources` keeps the process-wide default used by CLI/MCP and legacy SDK calls.
+Omitting `sources` keeps the process-wide default used by the CLI and legacy SDK calls.
+MCP 0.7.1 also uses that default; MCP 0.8.0 and newer create an independent
+context for each connection.
 `collectedSources()` and `clearCollectedSources()` only operate on that default context.
 The fetch cache is shared across contexts, but a cache hit registers its page in the current
 context. Already-aborted calls reject before cache access. Cached content and titles count

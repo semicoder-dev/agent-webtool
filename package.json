@@ -1,6 +1,6 @@
 {
   "name": "agent-webtool",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Web fetch and multi-engine search tools for AI agents (SDK + CLI + MCP server). No API keys required.",
   "keywords": [
     "agent",
@@ -79,7 +79,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/client": "^2.3.1",
+    "@modelcontextprotocol/server": "^2.3.1",
     "@types/bun": "latest",
     "@types/marked-terminal": "^6.1.1",
     "@types/turndown": "^5.0.6",

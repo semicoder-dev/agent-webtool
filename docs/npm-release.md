@@ -1,14 +1,18 @@
 # GitHub 检查与 npm 发布
 
-## 0.8.0 MCP v2 发行准备（2026-10-15）
+## 0.8.0 MCP v2 发行（2026-10-15）
 
-用户在本地适配验收后明确要求发布，发行版本由 0.7.1 升为 0.8.0；registry 已核实该版本尚未发布。MCP 依赖替换为 `@modelcontextprotocol/server` / `client` 2.3.1（声明 `^2.3.1`），使用 `serveStdio` 同时服务 2026-07-28 与五个旧协议版本。MCP 增加结构化结果、严格参数校验、取消透传和连接级来源上下文；SDK 导出、CLI 命令和 Node 最低版本不变。
+用户在本地适配验收后追加“发布”授权。`v0.8.0` 固定 `1b13f494008b68d527dbe07e7368201e3757bb67`，MCP server/client 依赖锁定 2.3.1（声明 `^2.3.1`），`serveStdio` 同时服务 2026-07-28 与五个旧协议版本。新增结构化结果、严格参数校验、取消透传和连接级来源上下文；SDK 返回类型、普通 CLI 输出及 Node 最低版本保持不变。
 
-升级注意：未知输入字段返回工具校验错误；未知或被筛除的工具返回 JSON-RPC `-32602`。现有单个文本内容块保留，成功结果另有 `structuredContent`；搜索部分失败、全部失败和无结果仍按原有引擎状态返回。
+升级注意：未知输入字段返回工具校验错误；未知或被筛除的工具返回 JSON-RPC `-32602`。原有单个文本内容块保留，成功结果另有 `structuredContent`；搜索部分失败、全部失败和无结果仍按原有引擎状态返回。
 
-适配阶段已通过 `check`、103 项离线测试（607 断言）、构建、`verify:sdk` 及 Node 20.18.1 / 24.22.0 消费检查。独立归档覆盖新协议发现、全部旧版初始化、输入/输出 schema、工具筛选、错误分类和 EOF 退出；源码测试另覆盖成功结果、并发、来源隔离、取消与 SIGINT/SIGTERM。发行流程重新验证 0.8.0 归档，依次完成远端 CI、手动归档验收、标签 OIDC、公开归档一致性与全新 registry 消费，然后更新官网默认安装并部署。公开证据待完成后记录；真实搜索引擎与具体桌面 MCP 客户端本轮未重新验证。
+- [三平台 CI 38757514787](https://github.com/semicoder-dev/agent-webtool/actions/runs/38757514787)、[手动归档验收 38757513695](https://github.com/semicoder-dev/agent-webtool/actions/runs/38757513695) 和 [正式 OIDC 38758509941](https://github.com/semicoder-dev/agent-webtool/actions/runs/38758509941) 均成功。源码 `check`、103 项离线测试 / 607 断言、构建及 ESM/CJS/TypeScript 验证通过。
+- npm latest 为 0.8.0，公开 tarball、手动验收归档及正式发布归档逐字节一致，SHA-256 `910cfefc92a2ac8106146afaae49973da4f016622b6997bc493e579a65b020b4`。公开 provenance 的包摘要、仓库、标签、提交与工作流匹配。
+- 全新缓存和独立目录从 registry 安装，在 Node 20.18.1 / 24.22.0 上通过 SDK ESM/CJS、TypeScript、两个 CLI 及六协议 MCP 发现/初始化、schema、筛选、错误和 EOF 检查。离线源码测试另覆盖自动协商、成功结构化结果、并发、来源隔离、取消与 SIGINT/SIGTERM。
+- GitHub npm 环境仅增加本次精确 `v0.8.0` tag 许可，保留其他保护和既有 Trusted Publisher。npm 接受后公开索引延迟数分钟，等待同步后消费通过，未重发或移动标签。
+- 官网介绍、安装、SDK、CLI、MCP 指南在公开包验收后同步 0.8.0；官网质量与两环境部署单独验收，完整结果见 workspace `docs/agent/sessions/2026-10-15-agent-webtool-mcp-v2.md`。真实搜索引擎与具体桌面 MCP 客户端本轮未重新验证。
 
-原本地同名 0.7.1 开发归档仅用于适配验收，不能覆盖公开 0.7.1；下方历史发行证据仍指原始公开产物。
+本机 Bun 1.4.3 开发归档与 GitHub Bun 1.4.2 的 CLI 构建字节不同，正式发行只使用上述 GitHub 验收产物。适配阶段同名 0.7.1 开发归档不属于已公开的 0.7.1；下方历史证据仍指原始公开版本。
 
 ## 0.7.1 组织首次发行（2026-10-11）
 

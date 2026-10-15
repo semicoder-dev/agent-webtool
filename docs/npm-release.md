@@ -1,5 +1,14 @@
 # GitHub 检查与 npm 发布
 
+## 0.8.1 结构化抓取发行（2026-10-16）
+
+`v0.8.1` 固定 `150275a6da3b7eac4777259da8b4a80370f7f749`，新增 webFetchResult/FetchResponse、缓存元数据与流式 10 MiB 响应限制，取消和超时覆盖 DNS 等待、重定向及正文。旧 webFetch 字符串、CLI/MCP 返回结构保持兼容。
+
+- [三平台 CI 38822757505](https://github.com/semicoder-dev/agent-webtool/actions/runs/38822757505)、[候选归档 38822756040](https://github.com/semicoder-dev/agent-webtool/actions/runs/38822756040)、[真实 OIDC 38822896341](https://github.com/semicoder-dev/agent-webtool/actions/runs/38822896341) 成功；本地 check、108 项测试、build/npm:pack 通过。
+- 公开归档、候选和正式发布归档逐字节一致，SHA-256 `e623cbac66fc9f43c4d6a8e4d80f77b73ee75d07fb7060fda733a15f0705107f`。SLSA provenance 的仓库、标签、提交和包 SHA-512 一致；全新缓存 registry 安装在 Node 20.18.1 / 24.22.0 通过 ESM/CJS、TypeScript、CLI 与六协议 MCP 消费。
+- 仅追加 npm 环境精确 v0.8.1 许可，保留其他保护。npm 处理期间曾返回 404，等待索引完成后验收通过，没有重复发布或移动标签。本机 Bun 1.4.3 产物不替代 CI Bun 1.4.2 的正式归档。
+- fn 将消费精确 0.8.1；官网 SDK、安装和版本说明按公开产物同步，部署结果由 workspace 本次跨项目发行记录独立维护。
+
 ## 0.8.0 MCP v2 发行（2026-10-15）
 
 用户在本地适配验收后追加“发布”授权。`v0.8.0` 固定 `1b13f494008b68d527dbe07e7368201e3757bb67`，MCP server/client 依赖锁定 2.3.1（声明 `^2.3.1`），`serveStdio` 同时服务 2026-07-28 与五个旧协议版本。新增结构化结果、严格参数校验、取消透传和连接级来源上下文；SDK 返回类型、普通 CLI 输出及 Node 最低版本保持不变。

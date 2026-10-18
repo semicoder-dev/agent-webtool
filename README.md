@@ -7,6 +7,8 @@
 Web fetch and multi-engine search tools for AI agents. Use it as a JavaScript/TypeScript
 **SDK**, a **CLI**, or an **MCP server**. **No API keys required.**
 
+> Unreleased development fix: Baidu security-verification pages and DuckDuckGo challenge forms now report an engine error (`ok: false`) instead of a successful search with zero results. This does not solve or bypass verification; callers should show the unavailable engine and use other public sources. Public npm 0.8.1 does not yet contain this fix.
+
 Exposes two operations through all three integration modes:
 
 | Tool         | Purpose                                                                                                                            |

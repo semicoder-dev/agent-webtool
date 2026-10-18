@@ -24,6 +24,11 @@ export const baidu: SearchAdapter = {
       );
       hits.push({ title, url, snippet, rank: hits.length + 1 });
     });
+    if (hits.length === 0 && /百度安全(?:验证|校验)/u.test($("title").text())) {
+      throw new Error(
+        "baidu requires human verification (captcha); search results are unavailable",
+      );
+    }
     return hits;
   },
 };

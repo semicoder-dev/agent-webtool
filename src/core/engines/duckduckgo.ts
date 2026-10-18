@@ -47,6 +47,11 @@ export const duckduckgo: SearchAdapter = {
       if (!title || !url) return;
       hits.push({ title, url, snippet, rank: hits.length + 1 });
     });
+    if (hits.length === 0 && $("form#challenge-form, #anomaly-modal").length > 0) {
+      throw new Error(
+        "duckduckgo requires human verification (captcha); search results are unavailable",
+      );
+    }
     return hits;
   },
 };

@@ -130,6 +130,52 @@ describe("webSearch text output", () => {
     expect(output).toContain("baidu: 0 results");
   });
 
+  test("HTTP 200/202 challenge pages report blocked engines, not successful empty searches", async () => {
+    const result = await webSearch(
+      { query: "科技新闻", engines: ["baidu", "duckduckgo"] },
+      {
+        fetch: async (url) =>
+          url.includes("baidu.com")
+            ? rawResponse(
+                "<html><title>百度安全验证</title><body>网络不给力，请稍后重试</body></html>",
+              )
+            : {
+                ...rawResponse(
+                  '<html><title>DuckDuckGo</title><form id="challenge-form"><div id="anomaly-modal">Please complete the following challenge</div></form></html>',
+                ),
+                status: 202,
+              },
+      },
+    );
+    expect(result.results).toEqual([]);
+    expect(result.engines.map((s) => ({ status: s.status, ok: s.ok }))).toEqual([
+      { status: "error", ok: false },
+      { status: "error", ok: false },
+    ]);
+    expect(result.engines.every((s) => s.error?.includes("human verification"))).toBe(true);
+    expect(result.text).not.toContain("returned no results");
+  });
+
+  test("search results discussing captcha are not themselves blocked pages", async () => {
+    const result = await webSearch(
+      { query: "captcha", engines: ["duckduckgo"] },
+      {
+        fetch: async () =>
+          rawResponse(
+            duckDuckGoPage([
+              {
+                title: "captcha and 百度安全验证",
+                url: "https://example.com/article",
+                snippet: "About human verification",
+              },
+            ]),
+          ),
+      },
+    );
+    expect(result.engines[0]?.status).toBe("success");
+    expect(result.results).toHaveLength(1);
+  });
+
   test("engines subset is honored", async () => {
     const calls: string[] = [];
     const output = await searchText(
